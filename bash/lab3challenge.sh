@@ -7,7 +7,7 @@ then
 fi
 
 #Check if LXD is installed. If it isn't, install it and set it up automatically.
-if [ ! -d /usr/sbin/lxd ]
+if [ ! -x /usr/sbin/lxd ]
 then
 	echo "Lxd is not installed. Installing lxd..."
 	#Install lxd and run initalization...
@@ -32,7 +32,7 @@ echo "Installing Apache..."
 lxc exec COMP2101-S22 -- apt-get -y install apache2 > /dev/null
 
 #Check is curl is installed - it isn't by default!
-if [ ! -d /usr/bin/curl ]
+if [ ! -x /usr/bin/curl ]
 then
 	echo "Curl is not installed, installing Curl..."
 	apt -y install curl > /dev/null
