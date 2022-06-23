@@ -68,6 +68,8 @@ function cleanup {
 	rm -f /tmp/cpuinfo.*
 	rm -f /tmp/memoryinfo.*
 	rm -f /tmp/sysinfo.*
+	#Let's exit because we are all done here.
+	exit 0
 }
 
 #Here is a trap to catch SIGINT which should cover ctrl+c.
