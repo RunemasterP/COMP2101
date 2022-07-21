@@ -1,0 +1,2 @@
+﻿$activeInterfaces = get-ciminstance win32_networkadapterconfiguration | Where-Object ipenabled -eq $true
+$activeInterfaces | Format-Table -AutoSize -Wrap Description,Index,IPAddress,IPSubnet,DNSDomain,DNSHostName
