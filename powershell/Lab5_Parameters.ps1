@@ -1,18 +1,38 @@
-﻿param($sysFlag, $diskFlag, $netFlag)
+﻿<#
+.SYNOPSIS
+Gets various information related to your computer.
+.DESCRIPTION
+Fetches system (OS, CPU, RAM, GPU), disk, and network information. If no report type is set, you get a message instead.
+.PARAMETER system
+Switch parameter that displays system related infomration when called.
+.PARAMETER disks
+Switch parameter that displays hard-drive disk information when called.
+.PARAMETER network
+Switch parameter that displays active network interface information when called.
+.EXAMPLE
+Lab5_Parameters.ps1 -System -Disks -Network
+
+Description
+---------------------------------------
+Test of the command with all parameters invoked: a full report.
+.OUTPUTS
+Microsoft.PowerShell.Commands.Internal.Format
+#>
+
+#These switch type parameters make it so that we just have to invoke the keyword without passing $true.
+param([switch]$System = $false, [switch]$Disks = $false, [switch]$Network = $false)
 
 function Get-SystemHardware {
     $systemHardware = Get-CIMInstance win32_computersystem
     
-    Write-Output "System Hardware:"
-    new-object -typename psobject -property @{Description=$systemHardware.Description} | Format-List -Property Description
+    return new-object -typename psobject -property @{Description=$systemHardware.Description}
 }
 
 function Get-OperatingSystem {
     $systemOS = Get-CimInstance win32_operatingsystem
     
-    Write-Output "Operating System:"
-    New-Object -typename psobject -property @{Name=$systemOS.Caption
-                                                     Version=$systemOS.Version.ToString()} | Format-List -Property Name,Version
+    return New-Object -typename psobject -property @{Name=$systemOS.Caption
+                                                     Version=$systemOS.Version.ToString()}
 }
 
 function Get-SystemProcessor {
@@ -44,41 +64,37 @@ function Get-SystemProcessor {
         $processorL3CacheSize = $systemProcessor.L3CacheSize[0]
     }
 
-    Write-Output "System Processor:"
-    New-Object -TypeName psObject -Property @{Description=$systemProcessor.Description[0]
+    
+    #return $processorDescription,$processorCoreCount,$processorL1CacheSize,$processorL2CacheSize,$processorL3CacheSize
+    return New-Object -TypeName psObject -Property @{Description=$systemProcessor.Description[0]
                                                      NumberOfCores=$coreSum
                                                      "MaxClockSpeed(Ghz)"=$processorSpeed
                                                      L1CacheSize=$processorL1CacheSize
                                                      L2CacheSize=$processorL2CacheSize
-                                                     L3CacheSize=$processorL3CacheSize} | Format-List -Property Description,NumberOfCores,"MaxClockSpeed(Ghz)",L1CacheSize,L2CacheSize,L3CacheSize
+                                                     L3CacheSize=$processorL3CacheSize}
 }
 
 function Get-SystemRAM {
     $systemRAM = Get-CimInstance win32_physicalmemory
 
-    Write-Output "System RAM:"
-    New-Object -TypeName psObject -Property @{Vendor=$systemRAM.Manufacturer
+    return New-Object -TypeName psObject -Property @{Vendor=$systemRAM.Manufacturer
                                                     Description=$systemRAM.Description
                                                     Bank=$systemRAM.BankLabel
                                                     "Capacity(GB)"=$systemRAM.Capacity / 1gb -as [int]
-                                                    Slot=$systemRAM.DeviceLocator} | Format-Table -AutoSize -Wrap -Property Vendor,Description,Bank,"Capacity(GB)",Slot
-    Write-Output "Total Capacity of RAM(GB):"
-    Write-Output ([float]$systemRAM.Capacity / 1gb)
-
+                                                    Slot=$systemRAM.DeviceLocator}
 }
 
 function Get-ActiveInterfaces {
     $activeInterfaces = get-ciminstance win32_networkadapterconfiguration | Where-Object ipenabled -eq $true
     #$activeInterfaces | Format-Table -AutoSize -Wrap Description,Index,IPAddress,IPSubnet,DNSDomain,DNSHostName,DNSServerSearchOrder
 
-    Write-Output "Active System Network Interfaces:"
-    New-Object -TypeName psObject -Property @{Description=$activeInterfaces.Description
+    return New-Object -TypeName psObject -Property @{Description=$activeInterfaces.Description
                                                      Index=$activeInterfaces.Index
                                                      IPAddress=$activeInterfaces.IPAddress
                                                      IPSubnet=$activeInterfaces.IPSubnet
                                                      DNSDomain=$activeInterfaces.DNSDomain
                                                      DNSHostName=$activeInterfaces.DNSHostName
-                                                     DNSServer=$activeInterfaces.DNSServerSearchOrder} | Format-Table -AutoSize -Wrap Description,Index,IPAddress,IPSubnet,DNSDomain,DNSHostName,DNSServer
+                                                     DNSServer=$activeInterfaces.DNSServerSearchOrder}
 }
 
 function Get-SystemVideoCard {
@@ -87,15 +103,14 @@ function Get-SystemVideoCard {
     $videoDescription = $systemVideoCard.Name #Represents vendor and name.
     $videoResolution = $systemVideoCard.CurrentHorizontalResolution.ToString() + "x" + $systemVideoCard.CurrentVerticalResolution.ToString()
 
-    Write-Output "System Video Card:"
-    New-Object -TypeName psObject -Property @{Name=$systemVideoCard.Name
-                                                     Resolution=$videoResolution} | Format-List -Property Name,Resolution
+    return New-Object -TypeName psObject -Property @{Name=$systemVideoCard.Name
+                                                     Resolution=$videoResolution}
 }
 
 function Get-DiskDrives {
 
     $diskdrives = Get-CIMInstance CIM_diskdrive
-    Write-Output "System Disks:"
+
       foreach ($disk in $diskdrives) {
           $partitions = $disk|get-cimassociatedinstance -resultclassname CIM_diskpartition
           foreach ($partition in $partitions) {
@@ -111,3 +126,37 @@ function Get-DiskDrives {
       }
 
   }
+
+if(!$System -and !$Network -and !$Disks) {
+    Write-Output "Nothing to report here boss!"
+}
+
+if($System) {
+    Write-Output "System Hardware:"
+    Get-SystemHardware | Format-List -Property Description
+
+    Write-Output "Operating System:"
+    Get-OperatingSystem | Format-List -Property Name,Version
+
+    Write-Output "System Processor:"
+    Get-SystemProcessor | Format-List -Property Description,NumberOfCores,"MaxClockSpeed(Ghz)",L1CacheSize,L2CacheSize,L3CacheSize
+
+    Write-Output "System RAM:"
+    Get-SystemRAM | Format-Table -AutoSize -Wrap -Property Vendor,Description,Bank,"Capacity(GB)",Slot
+    Write-Output "Total Capacity of RAM(GB):"
+    Get-SystemRAM | Select -ExpandProperty "Capacity(GB)"
+    Write-Output "`n"
+
+    Write-Output "System Video Card:"
+    Get-SystemVideoCard | Format-List -Property Name,Resolution
+}
+
+if($Network) {
+    Write-Output "Active System Network Interfaces:"
+    Get-ActiveInterfaces | Format-Table -AutoSize -Wrap Description,Index,IPAddress,IPSubnet,DNSDomain,DNSHostName,DNSServer
+}
+
+if($Disks) {
+    Write-Output "System Disks:"
+    Get-DiskDrives
+}
