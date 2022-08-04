@@ -27,20 +27,20 @@ if(!$System -and !$Network -and !$Disks) {
 }
 
 if($System) {
-    Get-SystemHardware | Format-List -Property Description
+    Get-SystemHardware
 
-    Get-OperatingSystem | Format-List -Property Name,Version
+    Get-OperatingSystem 
 
-    Get-SystemProcessor | Format-List -Property Description,NumberOfCores,"MaxClockSpeed(Ghz)",L1CacheSize,L2CacheSize,L3CacheSize
+    Get-SystemProcessor 
 
-    Get-SystemRAM | Format-Table -AutoSize -Wrap -Property Vendor,Description,Bank,"Capacity(GB)",Slot
+    Get-SystemRAM 
     Write-Output "`n"
 
-    Get-SystemVideoCard | Format-List -Property Name,Resolution
+    Get-SystemVideoCard 
 }
 
 if($Network) {
-    Get-ActiveInterfaces | Format-Table -AutoSize -Wrap Description,Index,IPAddress,IPSubnet,DNSDomain,DNSHostName,DNSServer
+    Get-ActiveInterfaces
 }
 
 if($Disks) {
